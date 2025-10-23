@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação de Quiz - Click Conecta</title>
+    <!-- Carregando o Tailwind CSS para um design moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para os botões de opção */
+        .option-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .option-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center font-sans p-4">
+
+    <!-- O "realismo" vem de simular uma janela de aplicativo -->
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden">
+        
+        <!-- Barra de Título Falsa (para simular o app "Click Conecta") -->
+        <div class="bg-gray-200 p-3 flex items-center justify-between">
+            <div class="flex items-center space-x-1.5">
+                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+            </div>
+            <div class="text-sm text-gray-600 font-medium">Click Conecta - Quiz de Segurança</div>
+            <div></div> <!-- Espaçador -->
+        </div>
+
+        <!-- Barra de Progresso -->
+        <div class="w-full bg-gray-200">
+            <div id="progress-bar" class="bg-blue-600 h-2" style="width: 0%; transition: width 0.3s ease;"></div>
+        </div>
+
+        <!-- Conteúdo Principal do Quiz (será atualizado via JS) -->
+        <div id="quiz-container" class="p-8 md:p-12 transition-opacity duration-300">
+            <!-- A Tela de Boas-vindas será carregada aqui primeiro -->
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. DADOS DO QUIZ ---
+        // Todos os dados do quiz que definimos anteriormente
+        const quizData = [
+            {
+                id: 1,
+                title: "Desafio 1/5: Pressão na Sexta-feira",
+                icon: "📞 🕔",
+                scenario: "Sexta-feira, 17h50. Um colega de outra área liga desesperado e pede sua senha para 'só fazer uma consulta rápida' e resolver um problema urgente no sistema. O que você faz?",
+                options: [
+                    { text: "Envio minha senha pelo chat. É uma urgência e preciso ajudar a equipe.", isCorrect: false },
+                    { text: "Informo educadamente que não posso compartilhar minha senha, pois ela é pessoal e intransferível, e o oriento a abrir um chamado (mesmo que urgente) na TI para obter o acesso correto.", isCorrect: true },
+                    { text: "Falo a senha por telefone, pois assim não fica registrada por escrito.", isCorrect: false }
+                ],
+                feedbackCorrect: "Exato! 🎯 Sua senha é sua impressão digital. Você orientou o colega para o caminho correto sem quebrar as regras de segurança, mesmo sob pressão.",
+                feedbackIncorrect: "Opa, cuidado! 🚫 Mesmo em urgências, compartilhar credenciais é um risco enorme. A regra é clara: seu acesso, sua responsabilidade. A melhor opção era a (B)."
+            },
+            {
+                id: 2,
+                title: "Desafio 2/5: A Pasta Esquecida",
+                icon: "📁 🕸️",
+                scenario: "Você mudou de área há dois meses. Ao explorar a rede, você percebe que ainda tem acesso total à pasta do seu time antigo, que contém informações confidenciais que você não usa mais.",
+                options: [
+                    { text: "Ignoro. Se o acesso ainda está lá, é porque a TI ou meu antigo gestor acharam melhor manter.", isCorrect: false },
+                    { text: "Mantenho o acesso. É bom para 'ficar por dentro' do que acontece na área antiga.", isCorrect: false },
+                    { text: "Abro um chamado imediatamente para a TI, informando que aquele acesso não é mais necessário para minha função atual e solicito a remoção.", isCorrect: true }
+                ],
+                feedbackCorrect: "Perfeito! 👏 'Menos é mais' é a regra de ouro aqui. Acesso desnecessário é um risco desnecessário. Ao informar a TI, você ajudou a manter nossas portas trancadas.",
+                feedbackIncorrect: "Quase lá! 🔒 Acessos que não usamos são como portas esquecidas abertas. A proatividade de informar a TI (opção C) é a melhor forma de aplicar o princípio do 'Menos é Mais'."
+            },
+            {
+                id: 3,
+                title: "Desafio 3/5: O E-mail Suspeito",
+                icon: "✉️ 🎣",
+                scenario: "Você recebe um e-mail que *parece* ser do RH, com o assunto 'URGENTE: Verificação de dados cadastrais - Bônus'. O e-mail pede que você clique em um link e confirme seu CPF e senha.",
+                options: [
+                    { text: "Clico e preencho. O assunto fala em bônus e parece ser urgente.", isCorrect: false },
+                    { text: "Apago o e-mail. Provavelmente é spam.", isCorrect: false },
+                    { text: "Não clico em nada. Desconfio da urgência e do pedido de senha. Imediatamente, encaminho o e-mail (ou uso o 'Reportar Phishing') para a equipe de Segurança/TI analisar.", isCorrect: true }
+                ],
+                feedbackCorrect: "Mandou bem! 🕵️‍♂️ Esse é o espírito da regra 'Na dúvida, pergunte'. Você identificou um phishing e, o mais importante, reportou para a equipe certa!",
+                feedbackIncorrect: "Cuidado, essa foi por pouco! 🚫 Clicar (A) poderia entregar suas chaves. Apenas apagar (B) não ajuda a proteger os outros colegas. A melhor ação é sempre reportar (C)!"
+            },
+            {
+                id: 4,
+                title: "Desafio 4/5: O Cafézinho em Casa",
+                icon: "☕ 💻",
+                scenario: "Você está em home office e precisa se ausentar da mesa por alguns minutos (atender a porta). Seu notebook ficará sozinho.",
+                options: [
+                    { text: "Deixo tudo desbloqueado. Estou em casa, não há risco.", isCorrect: false },
+                    { text: "Pressiono 'Windows + L' (ou Ctrl+Cmd+Q no Mac) para bloquear a tela rapidamente.", isCorrect: true },
+                    { text: "Apenas fecho a tampa do notebook, mas ele não está configurado para bloquear ao fechar.", isCorrect: false }
+                ],
+                feedbackCorrect: "Isso aí! ☕️ Um hábito simples que faz uma diferença enorme. Seja em casa ou no escritório, a regra 'Seu acesso, sua responsabilidade' também vale para a segurança física.",
+                feedbackIncorrect: "Atenção! 💡 Mesmo em casa, os riscos existem. A tela bloqueada (opção B) é a forma mais rápida e segura de proteger seu acesso."
+            },
+            {
+                id: 5,
+                title: "Desafio 5/5: O Atalho",
+                icon: "🏃‍♂️ 🔑",
+                scenario: "Você precisa de acesso a um sistema novo para um projeto. O que é mais eficiente e seguro?",
+                options: [
+                    { text: "Peço a senha emprestada do meu colega que já tem o acesso, só para adiantar o trabalho.", isCorrect: false },
+                    { text: "Abro um chamado na TI solicitando o acesso, detalhando o porquê (o projeto) e com a aprovação do meu gestor copiada.", isCorrect: true },
+                    { text: "Ligo diretamente para um amigo da TI e peço para ele 'liberar rapidinho' para mim.", isCorrect: false }
+                ],
+                feedbackCorrect: "É exatamente esse o fluxo! 🚀 Você usou o canal correto, deu a justificativa e incluiu a aprovação. Isso agiliza o processo de forma segura e registrada!",
+                feedbackIncorrect: "Entendemos a pressa, mas... 🏃‍♂️ Pedir emprestado (A) viola a Regra 1. Pedir 'por fora' (C) quebra o registro. O caminho correto (B) é o único seguro."
+            }
+        ];
+
+        // --- 2. ESTADO DO QUIZ ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let currentScreen = 'welcome'; // welcome, question, feedback, results
+
+        // --- 3. REFERÊNCIAS DE ELEMENTOS ---
+        const quizContainer = document.getElementById('quiz-container');
+        const progressBar = document.getElementById('progress-bar');
+
+        // --- 4. FUNÇÕES DE RENDERIZAÇÃO ---
+
+        // TELA 1: Boas-vindas
+        function renderWelcome() {
+            currentScreen = 'welcome';
+            quizContainer.style.opacity = 0;
+            setTimeout(() => {
+                quizContainer.innerHTML = `
+                    <div class="text-center">
+                        <div class="text-7xl mb-4">🔑</div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">E aí, você é uma peça chave de Segurança?</h1>
+                        <p class="text-lg text-gray-600 mb-4">Olá, [Nome do Colaborador]!</p>
+                        <p class="text-gray-700 mb-8 max-w-md mx-auto">Preparamos 5 desafios rápidos do dia a dia. Cada acerto mostra o quanto você é essencial para proteger nossa empresa. Vamos lá?</p>
+                        <button id="start-btn" class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-10 rounded-lg text-lg shadow-lg hover:bg-blue-700 transition duration-200 transform hover:scale-105">
+                            COMEÇAR O DESAFIO!
+                        </button>
+                    </div>
+                `;
+                quizContainer.style.opacity = 1;
+                updateProgressBar();
+            }, 300); // Atraso para a transição de opacidade
+        }
+
+        // TELA 2, 4, etc.: Pergunta
+        function renderQuestion() {
+            currentScreen = 'question';
+            const question = quizData[currentQuestionIndex];
+            
+            quizContainer.style.opacity = 0;
+            setTimeout(() => {
+                quizContainer.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="text-5xl">${question.icon}</div>
+                            <div class="text-sm text-gray-500 font-semibold">${question.title}</div>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Cenário:</h2>
+                        <p class="text-gray-700 mb-6 leading-relaxed">${question.scenario}</p>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">O que você faz?</h3>
+                        <div class="space-y-3">
+                            ${question.options.map((option, index) => `
+                                <button 
+                                    class="option-btn w-full text-left p-4 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 transition duration-200 cursor-pointer"
+                                    data-correct="${option.isCorrect}"
+                                >
+                                    <span class="font-bold text-gray-700">${String.fromCharCode(65 + index)})</span>
+                                    <span class="text-gray-800 ml-2">${option.text}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                quizContainer.style.opacity = 1;
+                updateProgressBar();
+            }, 300);
+        }
+
+        // TELA 3, 5, etc.: Feedback
+        function renderFeedback(isCorrect) {
+            currentScreen = 'feedback';
+            const question = quizData[currentQuestionIndex];
+            const feedbackText = isCorrect ? question.feedbackCorrect : question.feedbackIncorrect;
+            
+            const config = isCorrect ? {
+                icon: "🎯",
+                title: "Mandou bem!",
+                titleColor: "text-green-700",
+                borderColor: "border-green-500",
+                bgColor: "bg-green-50",
+                buttonColor: "bg-green-600",
+                buttonHover: "hover:bg-green-700",
+                points: "+100 Pontos!"
+            } : {
+                icon: "🚫",
+                title: "Opa, cuidado!",
+                titleColor: "text-red-700",
+                borderColor: "border-red-500",
+                bgColor: "bg-red-50",
+                buttonColor: "bg-red-600",
+                buttonHover: "hover:bg-red-700",
+                points: "+0 Pontos"
+            };
+
+            quizContainer.style.opacity = 0;
+            setTimeout(() => {
+                quizContainer.innerHTML = `
+                    <div class="text-center border-4 ${config.borderColor} ${config.bgColor} p-8 rounded-lg">
+                        <div class="text-7xl mb-4">${config.icon}</div>
+                        <h1 class="text-3xl font-bold ${config.titleColor} mb-2">${config.title}</h1>
+                        <p class="text-lg text-gray-800 mb-4">${feedbackText}</p>
+                        <p class="text-xl font-bold ${config.titleColor} mb-6">${config.points}</p>
+                        <button id="next-btn" class="w-full md:w-auto ${config.buttonColor} text-white font-bold py-3 px-10 rounded-lg text-lg shadow-lg ${config.buttonHover} transition duration-200 transform hover:scale-105">
+                            ${currentQuestionIndex === quizData.length - 1 ? 'Ver Resultado Final →' : 'Próximo Desafio →'}
+                        </button>
+                    </div>
+                `;
+                quizContainer.style.opacity = 1;
+            }, 300);
+        }
+
+        // TELA FINAL: Resultados
+        function renderResults() {
+            currentScreen = 'results';
+            const acertos = score;
+            const total = quizData.length;
+            const pontuacao = acertos * 100;
+            
+            let config;
+            if (acertos >= 4) { // Pontuação alta
+                config = {
+                    icon: "🏆",
+                    title: "Parabéns! Você é uma Peça Chave!",
+                    titleColor: "text-blue-700",
+                    scoreColor: "text-green-600",
+                    message: "Você domina as Regras de Ouro! Sua atenção aos detalhes faz de você um 'Elo Mais Forte' na proteção da nossa empresa. Continue assim!"
+                };
+            } else { // Pontuação média/baixa
+                config = {
+                    icon: "👍",
+                    title: "Bom trabalho! Você está no caminho certo!",
+                    titleColor: "text-gray-800",
+                    scoreColor: "text-yellow-600",
+                    message: "Obrigado por participar! Alguns cenários geram dúvidas mesmo. Reveja as '3 Regras de Ouro' e lembre-se: na dúvida, sempre acione a TI e a Governança!"
+                };
+            }
+
+            quizContainer.style.opacity = 0;
+            setTimeout(() => {
+                quizContainer.innerHTML = `
+                    <div class="text-center">
+                        <div class="text-7xl mb-4">${config.icon}</div>
+                        <h1 class="text-3xl font-bold ${config.titleColor} mb-2">${config.title}</h1>
+                        <p class="text-lg text-gray-600 mb-2">Sua Pontuação Final:</p>
+                        <div class="text-5xl font-bold ${config.scoreColor} mb-4">${pontuacao} Pontos</div>
+                        <div class="text-xl text-gray-600 mb-6">(${acertos} de ${total} acertos)</div>
+                        <p class="text-gray-700 mb-8 max-w-md mx-auto">${config.message}</p>
+                        <button id="restart-btn" class="w-full md:w-auto bg-gray-700 text-white font-bold py-3 px-10 rounded-lg text-lg shadow-lg hover:bg-gray-800 transition duration-200 transform hover:scale-105">
+                            Refazer o Quiz
+                        </button>
+                    </div>
+                `;
+                quizContainer.style.opacity = 1;
+                updateProgressBar();
+            }, 300);
+        }
+
+        // --- 5. LÓGICA DO QUIZ ---
+
+        function updateProgressBar() {
+            let progress = 0;
+            if (currentScreen === 'question') {
+                progress = ((currentQuestionIndex) / quizData.length) * 100;
+            } else if (currentScreen === 'results') {
+                progress = 100;
+            }
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function handleAnswer(isCorrect) {
+            if (isCorrect) {
+                score++;
+            }
+            renderFeedback(isCorrect);
+        }
+
+        function handleNext() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                renderQuestion();
+            } else {
+                renderResults();
+            }
+        }
+
+        function handleRestart() {
+            currentQuestionIndex = 0;
+            score = 0;
+            renderWelcome();
+        }
+
+        // --- 6. EVENTOS ---
+        // Usando delegação de eventos para lidar com botões dinâmicos
+        quizContainer.addEventListener('click', (e) => {
+            // Botão Iniciar
+            if (e.target.id === 'start-btn') {
+                currentQuestionIndex = 0;
+                score = 0;
+                renderQuestion();
+                return;
+            }
+            
+            // Botão de Opção de Resposta
+            if (e.target.closest('.option-btn')) {
+                const button = e.target.closest('.option-btn');
+                const isCorrect = button.dataset.correct === 'true';
+                handleAnswer(isCorrect);
+                return;
+            }
+
+            // Botão Próximo
+            if (e.target.id === 'next-btn') {
+                handleNext();
+                return;
+            }
+
+            // Botão Reiniciar
+            if (e.target.id === 'restart-btn') {
+                handleRestart();
+                return;
+            }
+        });
+
+        // --- 7. INICIALIZAÇÃO ---
+        renderWelcome();
+
+    </script>
+</body>
+</html>
